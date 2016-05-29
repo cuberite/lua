@@ -177,7 +177,7 @@ static void buffreplace (LexState *ls, char from, char to) {
 static void trydecpoint (LexState *ls, SemInfo *seminfo) {
   /* format error: try to update decimal point separator */
   char old = ls->decpoint;
-#if defined(ANDROID_NDK)
+#if defined(ANDROID)
   ls->decpoint = '.';
 #else
   struct lconv *cv = localeconv();
