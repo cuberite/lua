@@ -62,9 +62,6 @@ endif()
 # Tell Lua what dynamic loader to use (for LuaRocks):
 if (UNIX)
 	add_definitions(-DLUA_USE_DLOPEN)
-endif()
-
-if (UNIX)
-	target_link_libraries(lua m ${DYNAMIC_LOADER})
+	target_link_libraries(lua m ${CMAKE_DL_LIBS})
 endif()
 
