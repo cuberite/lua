@@ -57,6 +57,10 @@ else()
 endif()
 
 
+# Tell the compiler to use C++ when compiling the library,
+# so that Lua uses C++ exceptions instead of setjmp / longjmp (GH #3678):
+SET_SOURCE_FILES_PROPERTIES(${SOURCE} PROPERTIES LANGUAGE CXX)
+
 # Tell Lua what dynamic loader to use (for LuaRocks):
 if (UNIX)
 	add_definitions(-DLUA_USE_DLOPEN)
