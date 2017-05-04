@@ -133,5 +133,10 @@ if (NOT(USE_SYSTEM_LUA))
 		RUNTIME_OUTPUT_DIRECTORY_DEBUGPROFILE   ${CMAKE_SOURCE_DIR}/Server
 		RUNTIME_OUTPUT_DIRECTORY_RELEASEPROFILE ${CMAKE_SOURCE_DIR}/Server
 	)
-
+	if (MSVC)
+		set_target_properties(
+			luaexe
+			PROPERTIES FOLDER Support
+		)
+	endif()
 endif()
