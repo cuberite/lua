@@ -115,6 +115,7 @@ if (UNIX)
 	target_link_libraries(lua m ${CMAKE_DL_LIBS})
 endif()
 
+target_include_directories(lua INTERFACE "${CMAKE_CURRENT_LIST_DIR}/src")
 
 
 # If system-wide Lua is not available, build a local one:
