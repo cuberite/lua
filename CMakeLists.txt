@@ -62,13 +62,16 @@ set(LIBHEADERS
 
 
 
-# Lua needs to be linked dynamically on Windows and statically on *nix, so that LuaRocks work
+# Lua needs to be linked dynamically on Windows and statically on *nix, so that LuaRocks work:
 if (WIN32)
-	add_library(lua SHARED ${LIBSOURCES} ${LIBHEADERS})
+	add_library(lualib SHARED ${LIBSOURCES} ${LIBHEADERS})
+
+	target_compile_definitions(lualib PUBLIC LUA_BUILD_AS_DLL)
+
 	set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/Server)
 
 	# Output the DLL into the Server subfolder, so that Cuberite can find it:
-	SET_TARGET_PROPERTIES(lua PROPERTIES
+	SET_TARGET_PROPERTIES(lualib PROPERTIES
 		ARCHIVE_OUTPUT_DIRECTORY                ${CMAKE_BINARY_DIR}/Server
 		ARCHIVE_OUTPUT_DIRECTORY_DEBUG          ${CMAKE_BINARY_DIR}/Server
 		ARCHIVE_OUTPUT_DIRECTORY_RELEASE        ${CMAKE_BINARY_DIR}/Server
@@ -90,18 +93,18 @@ if (WIN32)
 	if (MSVC)
 		# Remove SCL warnings, we expect this library to have been tested safe
 		SET_TARGET_PROPERTIES(
-			lua PROPERTIES COMPILE_FLAGS "-D_CRT_SECURE_NO_WARNINGS"
+			lualib PROPERTIES COMPILE_FLAGS "-D_CRT_SECURE_NO_WARNINGS"
 		)
 	endif()
 
-	set_target_properties(lua PROPERTIES OUTPUT_NAME "lua51" PREFIX "")
+	set_target_properties(lualib PROPERTIES OUTPUT_NAME "lua51" PREFIX "")
 
 	# NOTE: The DLL for each configuration is stored at the same place, thus overwriting each other.
 	# This is known, however such behavior is needed for LuaRocks - they always load "lua5.1.dll" or "lua51.dll"
 	# We make it work by compiling to "lua51.dll" and providing a proxy-DLL "lua5.1.dll"
 	# See http://lua-users.org/wiki/LuaProxyDllFour for details
 else()
-	add_library(lua ${LIBSOURCES} ${LIBHEADERS})
+	add_library(lualib ${LIBSOURCES} ${LIBHEADERS})
 endif()
 
 
@@ -112,18 +115,21 @@ SET_SOURCE_FILES_PROPERTIES(${SOURCE} PROPERTIES LANGUAGE CXX)
 # Tell Lua what dynamic loader to use (for LuaRocks):
 if (UNIX)
 	add_definitions(-DLUA_USE_DLOPEN)
-	target_link_libraries(lua m ${CMAKE_DL_LIBS})
+	target_link_libraries(lualib m ${CMAKE_DL_LIBS})
 endif()
 
-target_include_directories(lua INTERFACE "${CMAKE_CURRENT_LIST_DIR}/src")
+# Let Lua use additional checks on its C API. This is only compiled into Debug builds:
+target_compile_definitions(lualib PRIVATE LUA_USE_APICHECK)
+
+target_include_directories(lualib INTERFACE "${CMAKE_CURRENT_LIST_DIR}/src")
 
 
-# If system-wide Lua is not available, build a local one:
-if (NOT(USE_SYSTEM_LUA))
-	add_executable(luaexe src/lua.c)
-	target_link_libraries(luaexe lua)
+# If not crosscompiling, build a local Lua:
+if (NOT(CMAKE_CROSSCOMPILING))
+	add_executable(lua src/lua.c)
+	target_link_libraries(lua lualib)
 	# Output the EXE into the Server subfolder, so that it can find lua51.dll:
-	SET_TARGET_PROPERTIES(luaexe PROPERTIES
+	SET_TARGET_PROPERTIES(lua PROPERTIES
 		ARCHIVE_OUTPUT_DIRECTORY                ${CMAKE_BINARY_DIR}/Server
 		ARCHIVE_OUTPUT_DIRECTORY_DEBUG          ${CMAKE_BINARY_DIR}/Server
 		ARCHIVE_OUTPUT_DIRECTORY_RELEASE        ${CMAKE_BINARY_DIR}/Server
@@ -142,7 +148,7 @@ if (NOT(USE_SYSTEM_LUA))
 	)
 	if (MSVC)
 		set_target_properties(
-			luaexe
+			lua
 			PROPERTIES FOLDER Support
 		)
 	endif()
